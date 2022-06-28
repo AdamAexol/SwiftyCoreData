@@ -42,9 +42,10 @@ where Object: SCDManagedObjectConvertible, ManagedObject: SCDObjectConvertible &
         fetchLimit: Int? = nil,
         completion: @escaping ([Object]) -> Void) {
         dispatch {
-            guard let fetchRequest = ManagedObject.fetchRequest() as? NSFetchRequest<ManagedObject> else {
+            guard let entityName = ManagedObject.entity().name else {
                 throw SCDError("Couldn't not perform fetchRequest for \(ManagedObject.classForCoder())")
             }
+            let fetchRequest = NSFetchRequest<ManagedObject>(entityName: entityName)
             fetchRequest.predicate = predicate
             fetchRequest.sortDescriptors = sortDescriptors
             if let limit = fetchLimit { fetchRequest.fetchLimit = limit }
@@ -80,9 +81,10 @@ where Object: SCDManagedObjectConvertible, ManagedObject: SCDObjectConvertible &
     ///   - completion: callback after operation is completed
     public func countAll(withPredicate predicate: NSPredicate? = nil, completion: @escaping (Int) -> Void) {
         dispatch {
-            guard let fetchRequest = ManagedObject.fetchRequest() as? NSFetchRequest<ManagedObject> else {
+            guard let entityName = ManagedObject.entity().name else {
                 throw SCDError("Couldn't not perform fetchRequest for \(ManagedObject.classForCoder())")
             }
+            let fetchRequest = NSFetchRequest<ManagedObject>(entityName: entityName)
             fetchRequest.predicate = predicate
             let objectsCount = try self.currentContext.count(for: fetchRequest)
             completion(objectsCount)
@@ -132,7 +134,10 @@ where Object: SCDManagedObjectConvertible, ManagedObject: SCDObjectConvertible &
         withPredicate predicate: NSPredicate? = nil,
         completion: @escaping () -> Void = {}) {
         dispatch {
-            let fetchRequest: NSFetchRequest<NSFetchRequestResult> = ManagedObject.fetchRequest()
+            guard let entityName = ManagedObject.entity().name,
+                  let fetchRequest = NSFetchRequest<ManagedObject>(entityName: entityName) as? NSFetchRequest<NSFetchRequestResult> else {
+                throw SCDError("Couldn't not perform fetchRequest for \(ManagedObject.classForCoder())")
+            }
             fetchRequest.predicate = predicate
             let batchDelete = NSBatchDeleteRequest(fetchRequest: fetchRequest)
             try self.currentContext.execute(batchDelete)
